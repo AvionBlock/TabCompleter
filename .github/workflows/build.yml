@@ -1,0 +1,32 @@
+name: Build and Archive
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "21"
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tabcompleter-artifact
+          path: build/libs/

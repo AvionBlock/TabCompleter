@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '9.0.0-beta10'
+}
+
+group = 'lol.hyper'
+version = '2.0.0'
+
+repositories {
+    mavenCentral()
+    maven { url = "https://repo.papermc.io/repository/maven-public/" }
+    maven { url = 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    implementation 'org.bstats:bstats-bukkit:3.1.0'
+    implementation 'lol.hyper:github-release-api:1.0.5'
+    compileOnly 'com.github.MilkBowl:VaultAPI:1.7.1'
+}
+
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+shadowJar {
+    archiveClassifier.set('shaded')
+    relocate 'org.bstats', 'lol.hyper.tabcompleter.bstats'
+    relocate 'lol.hyper.githubreleaseapi', 'lol.hyper.tabcompleter.updater'
+    exclude 'classpath.index'
+}
+
+build.finalizedBy shadowJar

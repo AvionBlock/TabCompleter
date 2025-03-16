@@ -59,7 +59,7 @@ public class PlayerCommandPreprocess implements Listener {
         boolean matched = allAllowCommands.stream().anyMatch(command::equalsIgnoreCase);
         if (!matched) {
             Component message = tabCompleter.getMessage("invalid-command-message");
-            tabCompleter.getAdventure().player(player).sendMessage(message);
+            player.sendMessage(message);
             event.setCancelled(true);
         }
     }
