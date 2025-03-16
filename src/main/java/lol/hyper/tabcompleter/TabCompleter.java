@@ -170,7 +170,7 @@ public final class TabCompleter extends JavaPlugin implements Listener {
     public void checkForUpdates() {
         GitHubReleaseAPI api;
         try {
-            api = new GitHubReleaseAPI("TabCompleter", "AlphaMSq");
+            api = new GitHubReleaseAPI("TabCompleter", "AvionBlock");
         } catch (IOException e) {
             Logger.warn("Unable to check updates!");
             e.printStackTrace();
