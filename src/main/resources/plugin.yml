@@ -4,6 +4,7 @@ main: lol.hyper.tabcompleter.TabCompleter
 api-version: 1.19
 author: hyperdefined
 depend: [Vault]
+folia-supported: true
 commands:
   tcreload:
     description: Reload config.

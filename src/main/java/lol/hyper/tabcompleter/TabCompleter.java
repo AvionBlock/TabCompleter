@@ -23,6 +23,7 @@ import lol.hyper.tabcompleter.commands.CommandReload;
 import lol.hyper.tabcompleter.events.PlayerCommandPreprocess;
 import lol.hyper.tabcompleter.events.PlayerCommandSend;
 import lol.hyper.tabcompleter.events.PlayerLeave;
+import lol.hyper.tabcompleter.utils.Logger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -37,16 +38,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.tcoded.folialib.FoliaLib;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
+
+import lombok.Getter;
 
 public final class TabCompleter extends JavaPlugin implements Listener {
 
     public final File configFile = new File(this.getDataFolder(), "config.yml");
     public FileConfiguration config;
-    public final Logger logger = this.getLogger();
+    private static @Getter TabCompleter instance;
+    private static @Getter FoliaLib foliaLib;
 
     // this stores which groups have which commands from the config
     public final HashMap<String, List<String>> groupCommands = new HashMap<>();
@@ -61,6 +66,8 @@ public final class TabCompleter extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        foliaLib = new FoliaLib(this);
+        instance = this;
         loadConfig(configFile);
 
         playerCommandPreprocess = new PlayerCommandPreprocess(this);
@@ -75,11 +82,13 @@ public final class TabCompleter extends JavaPlugin implements Listener {
 
         new Metrics(this, 10305);
 
-        Bukkit.getScheduler().runTaskAsynchronously(this, this::checkForUpdates);
+        foliaLib.getScheduler().runAsync(task -> {
+            checkForUpdates();
+        });
 
         RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
         if (rsp == null) {
-            logger.severe("Vault is not installed!");
+            Logger.error("Vault is not installed!");
             Bukkit.getPluginManager().disablePlugin(this);
         } else {
             permission = rsp.getProvider();
@@ -94,25 +103,52 @@ public final class TabCompleter extends JavaPlugin implements Listener {
 
         groupCommands.clear();
 
-        // load all base commands form config
+        // Load all base commands from the config
         ConfigurationSection groups = config.getConfigurationSection("groups");
         if (groups == null) {
-            logger.severe("The groups section in the config is missing! Plugin cannot function and will be disabled.");
+            Logger.error(
+                    "The 'groups' section is missing in the config! Plugin cannot function and will be disabled.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+
+        // If no "default" group in the config, add it
+        if (!groups.contains("default")) {
+            Logger.warn("No 'default' group in the config, adding...");
+            groups.set("default.commands", Arrays.asList("help"));
+            try {
+                config.save(file);
+            } catch (IOException e) {
+                Logger.error("Error when saving the config!");
+            }
+        }
+
+        boolean addDefaultCommands = config.getBoolean("add-default-commands", false);
+        List<String> defaultCommands = config.getStringList("groups.default.commands");
+        groupCommands.put("default", defaultCommands);
+
         for (String configGroup : groups.getKeys(false)) {
             List<String> commands = config.getStringList("groups." + configGroup + ".commands");
+
+            // Skip the 'default' group as it has already been added
+            if ("default".equals(configGroup)) {
+                continue;
+            }
+
+            if (addDefaultCommands) {
+                commands.addAll(defaultCommands.stream().filter(command -> !commands.contains(command)).toList());
+            }
+
             groupCommands.put(configGroup, commands);
         }
 
-        if (groupCommands.size() == 0) {
-            logger.warning(
-                    "There were not groups listed in the groups section of the config. Please add the groups. The plugin will not function currently.");
+        if (groupCommands.isEmpty()) {
+            Logger.warn(
+                    "No groups listed in the 'groups' section of the config. Please add groups. The plugin will not function.");
         }
 
         if (config.getInt("config-version") != 2) {
-            logger.warning("Your config file is outdated! Please regenerate the config.");
+            Logger.warn("Your config file is outdated! Please regenerate the config.");
         }
     }
 
@@ -125,7 +161,7 @@ public final class TabCompleter extends JavaPlugin implements Listener {
     public Component getMessage(String path) {
         String message = config.getString(path);
         if (message == null) {
-            logger.warning(path + " is not a valid message!");
+            Logger.warn(path + " is not a valid message!");
             return Component.text("Invalid path! " + path).color(NamedTextColor.RED);
         }
         return miniMessage.deserialize(message);
@@ -136,7 +172,7 @@ public final class TabCompleter extends JavaPlugin implements Listener {
         try {
             api = new GitHubReleaseAPI("TabCompleter", "AlphaMSq");
         } catch (IOException e) {
-            logger.warning("Unable to check updates!");
+            Logger.warn("Unable to check updates!");
             e.printStackTrace();
             return;
         }
@@ -145,25 +181,25 @@ public final class TabCompleter extends JavaPlugin implements Listener {
             GitHubRelease current = api.getReleaseByTag(this.getPluginMeta().getVersion());
             GitHubRelease latest = api.getLatestVersion();
             if (current == null) {
-                logger.warning(
+                Logger.warn(
                         "You are running a version that does not exist on GitHub. If you are in a dev environment, you can ignore this. Otherwise, this is a bug!");
                 return;
             }
 
             if (latest == null) {
-                logger.warning("Unable to retrieve the latest release information.");
+                Logger.warn("Unable to retrieve the latest release information.");
                 return;
             }
 
             int buildsBehind = api.getBuildsBehind(current);
             if (buildsBehind == 0) {
-                logger.info("You are running the latest version.");
+                Logger.info("You are running the latest version.");
             } else {
-                logger.info("A new version is available (" + latest.getTagVersion() + ")! You are running version "
+                Logger.info("A new version is available (" + latest.getTagVersion() + ")! You are running version "
                         + current.getTagVersion() + ". You are " + buildsBehind + " version(s) behind.");
             }
         } catch (Exception e) {
-            logger.warning("Error when checking updates!");
+            Logger.warn("Error when checking updates!");
         }
     }
 
@@ -176,16 +212,25 @@ public final class TabCompleter extends JavaPlugin implements Listener {
     public List<String> getCommandsForPlayer(Player player) {
         List<String> allAllowedCommands = new ArrayList<>();
         String[] playerGroups = permission.getPlayerGroups(player);
+
         for (String playerGroup : playerGroups) {
             List<String> commands = groupCommands.get(playerGroup);
-            // player is not in a group we have tracked
-            // or the commands saved are empty
-            // in this case, just ignore it
+
+            // If the group is not found or it has no commands, fall back to 'default' group
             if (commands == null || commands.isEmpty()) {
-                continue;
+                if (!groupCommands.containsKey(playerGroup)) {
+                    Logger.info("Player group '" + playerGroup
+                            + "' is not defined in the config. Falling back to 'default' group.");
+                }
+                commands = groupCommands.get("default");
             }
-            allAllowedCommands.addAll(commands);
+
+            if (commands != null && !commands.isEmpty()) {
+                allAllowedCommands.addAll(commands);
+            } else
+                continue;
         }
+
         return allAllowedCommands;
     }
 }

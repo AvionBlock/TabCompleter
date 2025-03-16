@@ -17,6 +17,9 @@ groups:
     commands:
       - help
 
+# When enabled, this will add the default group commands to all other groups.
+add-default-commands: true
+
 # This allows you to disable command execution if they are not on the list.
 # For example, someone can type a command that is not on the list above, and it will still execute.
 # Set this to true so that does not happen.
@@ -24,6 +27,7 @@ actually-block-command-execution: true
 
 # If you block commands that are not on the list, show them this message.
 # Ideally it should be "unknown command" but you can do whatever.
-invalid-command-message: "Unknown command. Type \"/help\" for help."
+# This message using MiniMessage format.
+invalid-command-message: '<red>Unknown command. Type "/help" for help.'
 
 config-version: 2
