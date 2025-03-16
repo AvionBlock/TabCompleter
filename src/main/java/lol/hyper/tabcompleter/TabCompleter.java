@@ -140,19 +140,30 @@ public final class TabCompleter extends JavaPlugin implements Listener {
             e.printStackTrace();
             return;
         }
-        GitHubRelease current = api.getReleaseByTag(this.getPluginMeta().getVersion());
-        GitHubRelease latest = api.getLatestVersion();
-        if (current == null) {
-            logger.warning(
-                    "You are running a version that does not exist on GitHub. If you are in a dev environment, you can ignore this. Otherwise, this is a bug!");
-            return;
-        }
-        int buildsBehind = api.getBuildsBehind(current);
-        if (buildsBehind == 0) {
-            logger.info("You are running the latest version.");
-        } else {
-            logger.warning("A new version is available (" + latest.getTagVersion() + ")! You are running version "
-                    + current.getTagVersion() + ". You are " + buildsBehind + " version(s) behind.");
+
+        try {
+            GitHubRelease current = api.getReleaseByTag(this.getPluginMeta().getVersion());
+            GitHubRelease latest = api.getLatestVersion();
+            if (current == null) {
+                logger.warning(
+                        "You are running a version that does not exist on GitHub. If you are in a dev environment, you can ignore this. Otherwise, this is a bug!");
+                return;
+            }
+
+            if (latest == null) {
+                logger.warning("Unable to retrieve the latest release information.");
+                return;
+            }
+
+            int buildsBehind = api.getBuildsBehind(current);
+            if (buildsBehind == 0) {
+                logger.info("You are running the latest version.");
+            } else {
+                logger.info("A new version is available (" + latest.getTagVersion() + ")! You are running version "
+                        + current.getTagVersion() + ". You are " + buildsBehind + " version(s) behind.");
+            }
+        } catch (Exception e) {
+            logger.warning("Error when checking updates!");
         }
     }
 
