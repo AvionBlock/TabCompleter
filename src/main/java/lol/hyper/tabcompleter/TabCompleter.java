@@ -23,7 +23,6 @@ import lol.hyper.tabcompleter.commands.CommandReload;
 import lol.hyper.tabcompleter.events.PlayerCommandPreprocess;
 import lol.hyper.tabcompleter.events.PlayerCommandSend;
 import lol.hyper.tabcompleter.events.PlayerLeave;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -59,13 +58,10 @@ public final class TabCompleter extends JavaPlugin implements Listener {
     public Permission permission = null;
 
     public final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private BukkitAudiences adventure;
 
     @Override
     public void onEnable() {
         loadConfig(configFile);
-
-        this.adventure = BukkitAudiences.create(this);
 
         playerCommandPreprocess = new PlayerCommandPreprocess(this);
         playerCommandSend = new PlayerCommandSend(this);
@@ -111,7 +107,8 @@ public final class TabCompleter extends JavaPlugin implements Listener {
         }
 
         if (groupCommands.size() == 0) {
-            logger.warning("There were not groups listed in the groups section of the config. Please add the groups. The plugin will not function currently.");
+            logger.warning(
+                    "There were not groups listed in the groups section of the config. Please add the groups. The plugin will not function currently.");
         }
 
         if (config.getInt("config-version") != 2) {
@@ -146,23 +143,17 @@ public final class TabCompleter extends JavaPlugin implements Listener {
         GitHubRelease current = api.getReleaseByTag(this.getDescription().getVersion());
         GitHubRelease latest = api.getLatestVersion();
         if (current == null) {
-            logger.warning("You are running a version that does not exist on GitHub. If you are in a dev environment, you can ignore this. Otherwise, this is a bug!");
+            logger.warning(
+                    "You are running a version that does not exist on GitHub. If you are in a dev environment, you can ignore this. Otherwise, this is a bug!");
             return;
         }
         int buildsBehind = api.getBuildsBehind(current);
         if (buildsBehind == 0) {
             logger.info("You are running the latest version.");
         } else {
-            logger.warning("A new version is available (" + latest.getTagVersion() + ")! You are running version " + current.getTagVersion() + ". You are " + buildsBehind + " version(s) behind.");
+            logger.warning("A new version is available (" + latest.getTagVersion() + ")! You are running version "
+                    + current.getTagVersion() + ". You are " + buildsBehind + " version(s) behind.");
         }
-    }
-
-    public BukkitAudiences getAdventure() {
-        if (this.adventure == null) {
-            throw new IllegalStateException(
-                    "Tried to access Adventure when the plugin was disabled!");
-        }
-        return this.adventure;
     }
 
     /**
