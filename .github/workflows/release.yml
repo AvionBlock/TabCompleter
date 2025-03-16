@@ -73,7 +73,7 @@ jobs:
         with:
           prerelease: false
           tag: ${{ github.event.inputs.tag }}
-          artifacts: build/libs/TabCompleter-*.jar
+          artifacts: build/libs/TabCompleter-*-shaded.jar
         env:
           GITHUB_REPOSITORY: AlphaMSq/TabCompleter
 
@@ -83,6 +83,6 @@ jobs:
         with:
           prerelease: true
           tag: ${{ github.event.inputs.tag }}
-          artifacts: build/libs/TabCompleter-*.jar
+          artifacts: build/libs/TabCompleter-*-shaded.jar
         env:
           GITHUB_REPOSITORY: AlphaMSq/TabCompleter
