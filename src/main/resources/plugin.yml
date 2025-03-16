@@ -1,7 +1,7 @@
 name: TabCompleter
 version: 2.0.0
 main: lol.hyper.tabcompleter.TabCompleter
-api-version: 1.19
+api-version: 1.21
 author: hyperdefined
 depend: [Vault]
 folia-supported: true
