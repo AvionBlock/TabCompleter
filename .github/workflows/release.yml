@@ -9,6 +9,9 @@ on:
       status:
         required: true
         description: "Status (beta, stable)"
+      description:
+        required: false
+        description: "Release description"
 
 env:
   VERSION: ${{ github.event.inputs.tag }}-${{ github.event.inputs.status }}
@@ -74,8 +77,9 @@ jobs:
           prerelease: false
           tag: ${{ github.event.inputs.tag }}
           artifacts: build/libs/TabCompleter-*-shaded.jar
+          body: ${{ github.event.inputs.description }}
         env:
-          GITHUB_REPOSITORY: AlphaMSq/TabCompleter
+          GITHUB_REPOSITORY: AvionBlock/TabCompleter
 
       - name: Create pre-release
         if: github.event.inputs.status != 'stable'
@@ -84,5 +88,6 @@ jobs:
           prerelease: true
           tag: ${{ github.event.inputs.tag }}
           artifacts: build/libs/TabCompleter-*-shaded.jar
+          body: ${{ github.event.inputs.description }}
         env:
-          GITHUB_REPOSITORY: AlphaMSq/TabCompleter
+          GITHUB_REPOSITORY: AvionBlock/TabCompleter
